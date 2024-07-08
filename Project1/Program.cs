@@ -17,7 +17,7 @@ list.Add(new Item(2, "Item3", 1));
 
 Console.WriteLine("Welcome to Warehouse Manager. Please see the list of all available commands. ");
 
-Console.WriteLine("-l || item list ");
+Console.WriteLine("-l || list of items ");
 
 Console.WriteLine("-a || add item ");
 
