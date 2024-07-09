@@ -9,9 +9,11 @@ namespace Project1
     internal class Item(int id, string type, int quantity) : IEquatable<Item>
     {
         Random rnd = new Random();
-        public int Id { get { return id; } set { if (id >= 0) id = value; else id = rnd.Next(1, 10000000); } }
+        public int Id { get { return id; } set { if (id >= 0) id = value; else throw new ArgumentException(String.Format("{0} Id cannot be <0", id),
+                                      "id"); } }
         public string Type { get { return type; } set { type = value; } }
-        public int Quantity { get { return quantity; } set { if (quantity > 0) quantity = value; else quantity = 1; } }
+        public int Quantity { get { return quantity; } set { if (quantity > 0) quantity = value; else throw new ArgumentException(String.Format("{0} quantity cannot be <=0", quantity),
+                                      "quantity"); } }
         public override string ToString()
         {
             return "ID: " + Id + "   Type: " + Type + "   Quantity: " + Quantity;
