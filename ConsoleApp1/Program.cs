@@ -18,12 +18,6 @@ list.Add(new Item(2, "Item3", 1));
 
 DateTime now = DateTime.Now;
 
-var ContainsId = new ContainsId();
-var VerifyId = new VerifyId();
-var VerifyQuantity = new VerifyQuantity();
-var VerifyType = new VerifyType();
-var RemoveId = new RemoveId();
-
 Console.WriteLine("Welcome to Warehouse Manager. Please see the list of all available commands. ");
 
 Console.WriteLine("-l  list of items ");
@@ -56,22 +50,17 @@ while (status)
             Console.WriteLine("Please pass an item Id");
             Int32.TryParse(Console.ReadLine(), out int id);
 
-            VerifyId.verifyId(id, out int verifiedId);
-
-            ContainsId.containsId(verifiedId, list, out int uniqueId);
-
-            var verifiedAndUniqueId = uniqueId;
+            Validator.ValidateId(id, list, out int verifiedAndUniqueId);
 
             Console.WriteLine("Please pass an item Type");
             string type = Console.ReadLine();
 
-            VerifyType.verifyType(type, out string verifiedType);
+            Validator.ValidateType(type, out string verifiedType);
 
             Console.WriteLine("Please pass an item Quantity");
             Int32.TryParse(Console.ReadLine(), out int quantity);
-            
-            VerifyQuantity.verifyQuantity(quantity, out int verifiedQuantity);
 
+            Validator.ValidateQuantity(quantity, out int verifiedQuantity);
             list.Add(new Item(verifiedAndUniqueId, verifiedType, verifiedQuantity));
             Console.WriteLine("Item was succesfully added! Please press any key to proceed...");
             break;
@@ -79,9 +68,16 @@ while (status)
             Console.WriteLine("");
             Console.WriteLine("Please write Id to remove");
             Int32.TryParse(Console.ReadLine(), out id);
-            VerifyId.verifyId(id, out verifiedId);
 
-            RemoveId.removeId(id, list);
+            if(Validator.ContainsId(id, list))
+            {
+                list.Remove(new Item(id, "dummyType", 0));
+                Console.WriteLine("Item with Id {0} is Removed! Please press any key to proceed...", id);
+            }
+            else
+            {
+                Console.WriteLine("Item with Id {0} is not found. Please press any key to proceed...", id);
+            }
 
             break;
         case ConsoleKey.X:
