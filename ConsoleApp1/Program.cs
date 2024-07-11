@@ -10,6 +10,12 @@ bool status;
 
 status = true;
 
+bool isInt32TryParseSuccess;
+
+string type;
+
+int id, quantity;
+
 var list = new List<Item>();
 
 list.Add(new Item(0, "Item1", 3));
@@ -42,43 +48,86 @@ while (status)
     {
         case ConsoleKey.L:
             Console.WriteLine("");
-            Console.WriteLine("Here's the List! Please press any key to proceed...");
             list.ForEach(Console.WriteLine);
+            Console.WriteLine("Here's the List! Please press any key to proceed...");
             break;
         case ConsoleKey.A:
+
             Console.WriteLine("");
             Console.WriteLine("Please pass an item Id");
-            Int32.TryParse(Console.ReadLine(), out int id);
+            isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out id);
 
-            Validator.ValidateId(id, list, out int verifiedAndUniqueId);
+            while (!isInt32TryParseSuccess || !Validator.ValidateId(id, list))
+            {
+                if (!isInt32TryParseSuccess)
+                {
+                    Console.WriteLine("WARNING: Id should be of integer type.");
+                    Console.WriteLine("Please pass a new Id");
+                    isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out id);
+                }
+
+                if (isInt32TryParseSuccess && !Validator.ValidateId(id, list))
+                {
+                    Console.WriteLine("WARNING: Id should be unique and greater than 0");
+                    Console.WriteLine("Please pass a new Id");
+                    isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out id);
+                }
+            }
 
             Console.WriteLine("Please pass an item Type");
-            string type = Console.ReadLine();
+            type = Console.ReadLine();
 
-            Validator.ValidateType(type, out string verifiedType);
+            while (!Validator.ValidateType(type))
+            {
+                Console.WriteLine("Type cannot be null or empty");
+                Console.WriteLine("Please pass a new item Type");
+                type = Console.ReadLine();
+            }
 
             Console.WriteLine("Please pass an item Quantity");
-            Int32.TryParse(Console.ReadLine(), out int quantity);
+            isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out quantity);
 
-            Validator.ValidateQuantity(quantity, out int verifiedQuantity);
-            list.Add(new Item(verifiedAndUniqueId, verifiedType, verifiedQuantity));
+            while (!isInt32TryParseSuccess || !Validator.ValidateQuantity(quantity))
+            {
+                if (!isInt32TryParseSuccess)
+                {
+                    Console.WriteLine("WARNING: Quantity should be of integer type.");
+                    isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out quantity);
+                }
+                if (isInt32TryParseSuccess && !Validator.ValidateQuantity(quantity))
+                {
+                    Console.WriteLine("WARNING: Quantity cannot be <=0");
+                    Console.WriteLine("Please pass a new Quantity");
+                    isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out quantity);
+                }
+            }
+
+            list.Add(new Item(id, type, quantity));
             Console.WriteLine("Item was succesfully added! Please press any key to proceed...");
             break;
         case ConsoleKey.D:
             Console.WriteLine("");
             Console.WriteLine("Please write Id to remove");
-            Int32.TryParse(Console.ReadLine(), out id);
+            isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out id);
 
-            if(Validator.ContainsId(id, list))
+            while(!isInt32TryParseSuccess || !Validator.ContainsId(id, list))
             {
-                list.Remove(new Item(id, "dummyType", 0));
-                Console.WriteLine("Item with Id {0} is Removed! Please press any key to proceed...", id);
+                if (!isInt32TryParseSuccess)
+                {
+                    Console.WriteLine("WARNING: Id should be of integer type.");
+                    Console.WriteLine("Please pass a new Id");
+                    isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out id);
+                }
+                if(isInt32TryParseSuccess && !Validator.ContainsId(id, list))
+                {
+                    Console.WriteLine("Item with Id {0} is not found!", id);
+                    Console.WriteLine("WARNING: Id should be existed and be greater than 0.");
+                    Console.WriteLine("Please pass a new Id.");
+                    isInt32TryParseSuccess = Int32.TryParse(Console.ReadLine(), out id);
+                }
             }
-            else
-            {
-                Console.WriteLine("Item with Id {0} is not found. Please press any key to proceed...", id);
-            }
-
+           list.Remove(new Item(id, "dummyType", 0));
+           Console.WriteLine("Item with Id {0} is Removed! Please press any key to proceed...", id);
             break;
         case ConsoleKey.X:
             Console.WriteLine("");
