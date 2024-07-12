@@ -132,6 +132,7 @@ while (status)
         case ConsoleKey.X:
             Console.WriteLine("");
             Console.WriteLine("Succes! The list was saved: ");
+            list.Last().Quantity = -1;
 
             list.ForEach(Console.WriteLine);
 
