@@ -7,8 +7,13 @@
     using System.Threading.Tasks;
     public static class CreateRandomTextFile
     {
-        public static async Task CreateRandomTextFileAsync(string filePath, SemaphoreSlim semaphore)
+        private const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        public static async Task CreateRandomTextFileAsync(string filePath, SemaphoreSlim semaphore, CancellationToken token)
         {
+
+            if (token.IsCancellationRequested)
+                token.ThrowIfCancellationRequested();
+
             await semaphore.WaitAsync();
             try
             {
@@ -16,6 +21,16 @@
                 string content = GenerateRandomText(100);
                 await File.WriteAllTextAsync(filePath, content);
                 Console.WriteLine($"File created: {filePath}");
+            }
+            catch (AggregateException ae)
+            {
+                foreach (Exception e in ae.InnerExceptions)
+                {
+                    if (e is TaskCanceledException)
+                        Console.WriteLine("The task is aborted");
+                    else
+                        Console.WriteLine(e.Message);
+                }
             }
             finally
             {
@@ -25,7 +40,6 @@
 
         public static string GenerateRandomText(int length)
         {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             Random random = new Random();
             StringBuilder result = new StringBuilder(length);
             for (int i = 0; i < length; i++)
