@@ -13,17 +13,14 @@ namespace WebApplication1
     {
         private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
-        public string GenerateJwt(string userName)
+        public string GenerateJwt(int userId, string userName)
         {
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                new Claim("Id", Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Sub, userName),
-                new Claim(JwtRegisteredClaimNames.Email, userName),
-                new Claim(JwtRegisteredClaimNames.Jti,
-                Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Name, userName),
             }),
                 Expires = DateTime.UtcNow.AddMinutes(5),
                 Issuer = _jwtOptions.Issuer,
@@ -40,6 +37,6 @@ namespace WebApplication1
 
     public interface IJwtService
     {
-        string GenerateJwt(string userName);
+        string GenerateJwt(int userId, string userName);
     }
 }

@@ -2,14 +2,15 @@
 using WebApplication1.DTO;
 using WebApplication1.Models;
 using WebApplication1.Exceptions;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebApplication1
 {
-    public class UserService(UserManager<User> userManager, IJwtService jwtService) : IUserService
+    public class UserService(UserManager<User> userManager, IJwtService jwtService, ApplicationContext context) : IUserService
     {
-        public async Task <AuthModel> RegisterUserAsync(CreateUserModel model)
+        public async Task <AuthModel> RegisterUserAsync(SignUpModel model)
         {
-            var result = await userManager.CreateAsync(new User
+            var user = new User
             {
                 Account = new Account
                 {
@@ -18,7 +19,8 @@ namespace WebApplication1
                 },
                 UserName = model.UserName,
                 Email = model.Email
-            }, model.Password);
+            };
+            var result = await userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
             {
@@ -27,13 +29,33 @@ namespace WebApplication1
             }
             return new AuthModel
             {
-                AccessToken = jwtService.GenerateJwt(model.UserName)
+                AccessToken = jwtService.GenerateJwt(user.Id, user.UserName)
+            };
+        }
+        public async Task<AuthModel> LoginUserAsync(SignInModel model)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == model.UserName);
+            if(user == null)
+            {
+                throw new SignInFailedException("User not found");
+            }
+
+            var isPasswordValid = await userManager.CheckPasswordAsync(user!, model.Password);
+
+            if(!isPasswordValid)
+            {
+                throw new SignInFailedException("User not found");
+            }
+            return new AuthModel
+            {
+                AccessToken = jwtService.GenerateJwt(user.Id, user!.UserName!)
             };
         }
     }
 
     public interface IUserService
     {
-        Task <AuthModel> RegisterUserAsync(CreateUserModel model);
+        Task <AuthModel> RegisterUserAsync(SignUpModel model);
+        Task<AuthModel> LoginUserAsync(SignInModel model);
     }
 }

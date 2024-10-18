@@ -1,6 +1,6 @@
 ﻿namespace WebApplication1.DTO
 {
-    public class CreateUserModel
+    public class SignUpModel
     {
         public string UserName { get; set; }
         public string Email { get; set; }

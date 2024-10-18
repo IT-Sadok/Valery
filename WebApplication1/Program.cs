@@ -8,6 +8,7 @@ using WebApplication1;
 using WebApplication1.Options;
 using WebApplication1.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,6 +82,19 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapPost("sign-up", ([FromServices] IUserService userService,
-    [FromBody] CreateUserModel model) => userService.RegisterUserAsync(model));
+    [FromBody] SignUpModel model) => userService.RegisterUserAsync(model));
+
+app.MapPost("sign-in", ([FromServices] IUserService userService,
+    [FromBody] SignInModel model) => userService.LoginUserAsync(model));
+
+app.MapGet("me", ([FromServices] IHttpContextAccessor accessor, [FromServices] ApplicationContext dbContext) =>
+{
+    var userId = accessor.HttpContext?.User.Claims
+    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?
+    .Value;
+
+    return dbContext.Users.Include(u => u.Account)
+        .FirstOrDefault(u=> u.Id == int.Parse(userId));
+}).RequireAuthorization();
 
 app.Run();
