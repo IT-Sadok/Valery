@@ -22,8 +22,8 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
 });
 
 builder.Services.AddIdentity<User, IdentityRole<int>>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationContext>();
-
+    .AddEntityFrameworkStores<ApplicationContext>()
+    .AddDefaultTokenProviders();
 builder.Services.AddAuthorization();
 
 builder.Services.Configure<IdentityOptions>(options =>
@@ -86,6 +86,9 @@ app.MapPost("sign-up", ([FromServices] IUserService userService,
 
 app.MapPost("sign-in", ([FromServices] IUserService userService,
     [FromBody] SignInModel model) => userService.LoginUserAsync(model));
+
+app.MapPost("edit-user", ([FromServices] IUserService userService,
+    [FromBody] EditUserModel model) => userService.EditUserAsync(model)).RequireAuthorization();
 
 app.MapGet("me", ([FromServices] IHttpContextAccessor accessor, [FromServices] ApplicationContext dbContext) =>
 {
