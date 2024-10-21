@@ -87,17 +87,37 @@ app.MapPost("sign-up", ([FromServices] IUserService userService,
 app.MapPost("sign-in", ([FromServices] IUserService userService,
     [FromBody] SignInModel model) => userService.LoginUserAsync(model));
 
-app.MapPost("edit-user", ([FromServices] IUserService userService,
-    [FromBody] EditUserModel model) => userService.EditUserAsync(model)).RequireAuthorization();
-
-app.MapGet("me", ([FromServices] IHttpContextAccessor accessor, [FromServices] ApplicationContext dbContext) =>
+app.MapPatch("email", async ([FromServices] IHttpContextAccessor accessor, [FromServices] IUserService userService,
+    [FromBody] ChangeEmailModel model) =>
 {
     var userId = accessor.HttpContext?.User.Claims
-    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?
-    .Value;
+    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-    return dbContext.Users.Include(u => u.Account)
-        .FirstOrDefault(u=> u.Id == int.Parse(userId));
+    var result = await userService.ChangeEmailAsync(userId!, model);
+    return result ? Results.Ok("Email updated successfully.") : Results.NotFound("User not found.");
+}).RequireAuthorization();
+
+app.MapPatch("password", async ([FromServices] IHttpContextAccessor accessor, [FromServices] IUserService userService,
+    [FromBody] ChangePasswordModel model) =>
+{
+    var userId = accessor.HttpContext?.User.Claims
+    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+    var result = await userService.ChangePasswordAsync(userId!, model);
+    return result ? Results.Ok("Password updated successfully.") : Results.BadRequest("Invalid current password or user not found.");
+}).RequireAuthorization();
+
+app.MapPut("me", async (
+    [FromServices] IHttpContextAccessor accessor,
+    [FromServices] IUserService userService,
+    [FromBody] UpdateProfileModel model) =>
+{
+    var userId = accessor.HttpContext?.User.Claims
+        .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+    var result = await userService.UpdateProfileAsync(userId!, model);
+
+    return result ? Results.Ok("Profile updated successfully.") : Results.NotFound("User not found.");
 }).RequireAuthorization();
 
 app.Run();

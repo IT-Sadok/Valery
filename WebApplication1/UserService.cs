@@ -3,6 +3,7 @@ using WebApplication1.DTO;
 using WebApplication1.Models;
 using WebApplication1.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace WebApplication1
 {
@@ -55,68 +56,66 @@ namespace WebApplication1
             };
         }
 
-        public async Task<AuthModel> EditUserAsync(EditUserModel model)
+        public async Task<bool> UpdateProfileAsync(string userId, UpdateProfileModel model)
         {
-            //bottleneck
             var user = await context.Users
-                .Include(u => u.Account)
-                .FirstOrDefaultAsync(u => u.UserName == model.OldUserName);
-
-            if (user!.Email != model.Email)
+            .Include(u => u.Account)
+            .FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            if (user == null)
             {
-                //change it to https://stackoverflow.com/questions/36367140/aspnet-core-generate-and-change-email-address
-                var changeEmailToken = await userManager.GenerateChangeEmailTokenAsync(user, model.Email);
-                var emailResult = await userManager.ChangeEmailAsync(user, model.Email, changeEmailToken);
-                if (!emailResult.Succeeded)
-                {
-                    throw new EditUserFailedException("Email change failed");
-                }
+                throw new UpdateProfileFailedException("User not found");
             }
 
-            if (!string.IsNullOrEmpty(model.NewPassword))
+            user.Account.Age = model.Age;
+            user.Account.Stack = model.Stack;
+            user.Account.Level = model.Level;
+
+            var result = await userManager.UpdateAsync(user);
+
+            if (!result.Succeeded)
             {
-                var passwordResult = await userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
-                if (!passwordResult.Succeeded)
-                {
-                    throw new EditUserFailedException("Password change failed");
-                }
+                throw new UpdateProfileFailedException(string.Join(", ",
+                    result.Errors.Select(x => x.Description)));
+            }
+            return true;
+        }
+
+        public async Task<bool> ChangeEmailAsync(string userId, ChangeEmailModel model)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                throw new UpdateEmailFailedException("User not found");
             }
 
-            bool hasChanges = false;
+            user.Email = model.NewEmail;
+            var result = await userManager.UpdateAsync(user);
 
-            if (user.Account.Description != null && user.Account.Description != model.AccountDescription)
+            if (!result.Succeeded)
             {
-                user.Account.Description = model.AccountDescription;
-                hasChanges = true;
+                throw new UpdateEmailFailedException(string.Join(", ",
+                    result.Errors.Select(x => x.Description)));
             }
-            if (user.Account.Age != model.Age)
-            {
-                user.Account.Age = model.Age;
-                hasChanges = true;
-            }
+            return true;
+        }
 
-            if (user.Account.Level != model.Level)
-            {
-                user.Account.Level = model.Level;
-                hasChanges = true;
-            }
+        public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordModel model)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            var isPasswordValid = await userManager.CheckPasswordAsync(user!, model.CurrentPassword);
 
-            if (user.Account.Stack != model.Stack)
+            if (user == null || !isPasswordValid)
             {
-                user.Account.Stack = model.Stack;
-                hasChanges = true;
+                throw new UpdatePasswordFailedException("User not found or password is incorrect");
             }
+            var result = await userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
 
-            if (hasChanges)
+            if (!result.Succeeded)
             {
-                var updateResult = await userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    throw new EditUserFailedException("User fields change failed");
-                }
+                throw new UpdatePasswordFailedException(string.Join(", ",
+                    result.Errors.Select(x => x.Description)));
             }
-
-            return new AuthModel { IsAuthenticated = true, Message = "User updated successfully" };
+            return true;
         }
     }
 
@@ -124,6 +123,8 @@ namespace WebApplication1
     {
         Task <AuthModel> RegisterUserAsync(SignUpModel model);
         Task<AuthModel> LoginUserAsync(SignInModel model);
-        Task<AuthModel> EditUserAsync(EditUserModel model);
+        Task<bool> UpdateProfileAsync(string userId, UpdateProfileModel model);
+        Task<bool> ChangeEmailAsync(string userId, ChangeEmailModel model);
+        Task<bool> ChangePasswordAsync(string userId, ChangePasswordModel model);
     }
 }
