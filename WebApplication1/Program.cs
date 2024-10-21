@@ -9,11 +9,14 @@ using WebApplication1.Options;
 using WebApplication1.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using WebApplication1.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<UserContext>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddDbContext<ApplicationContext>(options =>
@@ -87,36 +90,25 @@ app.MapPost("sign-up", ([FromServices] IUserService userService,
 app.MapPost("sign-in", ([FromServices] IUserService userService,
     [FromBody] SignInModel model) => userService.LoginUserAsync(model));
 
-app.MapPatch("email", async ([FromServices] IHttpContextAccessor accessor, [FromServices] IUserService userService,
+app.MapPatch("email", async ([FromServices] IUserService userService,
     [FromBody] ChangeEmailModel model) =>
 {
-    var userId = accessor.HttpContext?.User.Claims
-    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-    var result = await userService.ChangeEmailAsync(userId!, model);
+    var result = await userService.ChangeEmailAsync(model);
     return result ? Results.Ok("Email updated successfully.") : Results.NotFound("User not found.");
 }).RequireAuthorization();
 
-app.MapPatch("password", async ([FromServices] IHttpContextAccessor accessor, [FromServices] IUserService userService,
+app.MapPatch("password", async ([FromServices] IUserService userService,
     [FromBody] ChangePasswordModel model) =>
 {
-    var userId = accessor.HttpContext?.User.Claims
-    .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-    var result = await userService.ChangePasswordAsync(userId!, model);
+    var result = await userService.ChangePasswordAsync(model);
     return result ? Results.Ok("Password updated successfully.") : Results.BadRequest("Invalid current password or user not found.");
 }).RequireAuthorization();
 
 app.MapPut("me", async (
-    [FromServices] IHttpContextAccessor accessor,
     [FromServices] IUserService userService,
     [FromBody] UpdateProfileModel model) =>
 {
-    var userId = accessor.HttpContext?.User.Claims
-        .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-    var result = await userService.UpdateProfileAsync(userId!, model);
-
+    var result = await userService.UpdateProfileAsync(model);
     return result ? Results.Ok("Profile updated successfully.") : Results.NotFound("User not found.");
 }).RequireAuthorization();
 

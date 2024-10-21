@@ -4,10 +4,11 @@ using WebApplication1.Models;
 using WebApplication1.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.HttpResults;
+using WebApplication1.Data;
 
 namespace WebApplication1
 {
-    public class UserService(UserManager<User> userManager, IJwtService jwtService, ApplicationContext context) : IUserService
+    public class UserService(UserManager<User> userManager, IJwtService jwtService, ApplicationContext context, UserContext userContext) : IUserService
     {
         public async Task <AuthModel> RegisterUserAsync(SignUpModel model)
         {
@@ -56,11 +57,11 @@ namespace WebApplication1
             };
         }
 
-        public async Task<bool> UpdateProfileAsync(string userId, UpdateProfileModel model)
+        public async Task<bool> UpdateProfileAsync(UpdateProfileModel model)
         {
             var user = await context.Users
             .Include(u => u.Account)
-            .FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+            .FirstOrDefaultAsync(u => u.Id.ToString() == userContext.UserId);
             if (user == null)
             {
                 throw new UpdateProfileFailedException("User not found");
@@ -80,9 +81,9 @@ namespace WebApplication1
             return true;
         }
 
-        public async Task<bool> ChangeEmailAsync(string userId, ChangeEmailModel model)
+        public async Task<bool> ChangeEmailAsync(ChangeEmailModel model)
         {
-            var user = await userManager.FindByIdAsync(userId);
+            var user = await userManager.FindByIdAsync(userContext.UserId);
             if (user == null)
             {
                 throw new UpdateEmailFailedException("User not found");
@@ -99,9 +100,9 @@ namespace WebApplication1
             return true;
         }
 
-        public async Task<bool> ChangePasswordAsync(string userId, ChangePasswordModel model)
+        public async Task<bool> ChangePasswordAsync(ChangePasswordModel model)
         {
-            var user = await userManager.FindByIdAsync(userId);
+            var user = await userManager.FindByIdAsync(userContext.UserId);
             var isPasswordValid = await userManager.CheckPasswordAsync(user!, model.CurrentPassword);
 
             if (user == null || !isPasswordValid)
@@ -123,8 +124,8 @@ namespace WebApplication1
     {
         Task <AuthModel> RegisterUserAsync(SignUpModel model);
         Task<AuthModel> LoginUserAsync(SignInModel model);
-        Task<bool> UpdateProfileAsync(string userId, UpdateProfileModel model);
-        Task<bool> ChangeEmailAsync(string userId, ChangeEmailModel model);
-        Task<bool> ChangePasswordAsync(string userId, ChangePasswordModel model);
+        Task<bool> UpdateProfileAsync(UpdateProfileModel model);
+        Task<bool> ChangeEmailAsync(ChangeEmailModel model);
+        Task<bool> ChangePasswordAsync(ChangePasswordModel model);
     }
 }
